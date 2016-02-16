@@ -6,6 +6,7 @@ package sysmon
 
 import (
 	"fmt"
+	"time"
 )
 
 type Size uint64
@@ -44,4 +45,8 @@ func (b Size) String() string {
 	    return fmt.Sprintf("%.2fKB", float64(b) / float64(KB))
 	}
 	return fmt.Sprintf("%.2dB", b)
+}
+
+func UpTime() time.Duration {
+	return upTime()
 }

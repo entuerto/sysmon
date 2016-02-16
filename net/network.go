@@ -8,17 +8,67 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/entuerto/sysmon"
 )
 
-type Connections struct {
+type TcpState uint32
 
+const (
+	TcpStateClosed    TcpState = iota + 1
+	TcpStateListen       
+	TcpStateSynSent      
+	TcpStateSynRcvd      
+	TcpStateEstab        
+	TcpStateFinWait1     
+	TcpStateFinWait2     
+	TcpStateCloseWait    
+	TcpStateClosing      
+	TcpStateLastAck      
+	TcpStateTimeWait     
+	TcpStateDeleteTcb    
+)
+
+func (s TcpState) String() string {
+	switch s {
+	case TcpStateClosed:
+		return "CLOSED"
+	case TcpStateListen:
+		return "LISTEN"    
+	case TcpStateSynSent:
+		return "SYN-SENT"
+	case TcpStateSynRcvd:
+		return "SYN-RECEIVED"
+	case TcpStateEstab:
+		return "ESTABLISHED"
+	case TcpStateFinWait1:
+		return "FIN-WAIT-1"
+	case TcpStateFinWait2:
+		return "FIN-WAIT-2"
+	case TcpStateCloseWait:
+		return "CLOSE-WAIT"   
+	case TcpStateClosing:
+		return "CLOSING"     
+	case TcpStateLastAck:
+		return "LAST-ACK"
+	case TcpStateTimeWait:
+		return "TIME-WAIT"    
+	case TcpStateDeleteTcb:
+		return "DELETE-TCB"
+	}
+	return "UNKNOWN"
 }
 
-func QueryConnections() ([]Connections, error) {
-	return QueryConnections()
+type Connection struct {
+	State  TcpState
+	Local  syscall.Sockaddr
+	Remote syscall.Sockaddr
+}
+
+func QueryConnections() ([]Connection, error) {
+	return queryConnections()
 }
 
 //---------------------------------------------------------------------------------------

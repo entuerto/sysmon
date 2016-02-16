@@ -9,33 +9,35 @@ import (
 	"net"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/entuerto/sysmon"
+	"github.com/entuerto/sysmon/internal/win32"
 )
 
-var (
-	modiphlpapi = NewLazyDLL("iphlpapi.dll")
 
-	procGetExtendedTcpTable = modiphlpapi.NewProc("GetExtendedTcpTable")
-)
+func queryConnections() ([]Connection, error) {
+	table, err := win32.GetExtendedTcpTable() 
+	if err != nil {
+		return nil, err
+	}
 
-type _MIB_TCPTABLE struct {
-	NumEntries uint32
-    Table      [ANY_SIZE]_MIB_TCPROW
-}
+	var connections []Connection
+	for _, r := range table.Table {
+		c := Connection{
+			State  : TcpState(r.State),
+			Local  : &syscall.SockaddrInet4{
+				Port : int(r.LocalPort),
+				Addr : r.LocalAddr,
+			},
+			Remote : &syscall.SockaddrInet4{
+				Port : int(r.RemotePort),
+				Addr : r.RemoteAddr,
+			},
+		}
+		connections = append(connections, c)
+	}
 
-func queryConnections() ([]Connections, error) {
-/*	
-DWORD GetExtendedTcpTable(
-  _Out_   PVOID           pTcpTable,
-  _Inout_ PDWORD          pdwSize,
-  _In_    BOOL            bOrder,
-  _In_    ULONG           ulAf,
-  _In_    TCP_TABLE_CLASS TableClass,
-  _In_    ULONG           Reserved
-);
-*/
+	return connections, nil
 }
 
 func queryIOCounters(iface net.Interface, freq time.Duration, qio QueryIO) {

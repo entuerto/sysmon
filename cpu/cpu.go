@@ -44,3 +44,15 @@ func Cores() int {
 func LogicalCores() int {
 	return runtime.NumCPU()
 }
+
+func GetInfo() ([]Info, error) {
+	return getInfo()
+}
+
+func SystemTimes() (*Times, error) {
+	return systemTimes()
+}
+
+func UsagePercent() ([]float64, error) {
+	return usagePercent()
+}

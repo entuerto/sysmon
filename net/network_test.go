@@ -63,6 +63,22 @@ func TestInterfaceAddrs(t *testing.T) {
 	}
 }
 
+func TestQueryConnections(t *testing.T) {
+	conns, err := QueryConnections() 
+
+	if err != nil {
+		t.Errorf("error %v", err)
+	}
+
+	for _, c := range conns {
+		fmt.Println("Connection{")
+		fmt.Printf("  State  : %+v\n", c.State)
+		fmt.Printf("  Local  : %+v\n", c.Local)
+		fmt.Printf("  Remote : %+v\n", c.Remote)
+		fmt.Println("}")
+	}
+}
+
 func TestQueryIOCounters(t *testing.T) {
 	ifaces, err := net.Interfaces()
 
@@ -102,12 +118,4 @@ func delta(f, s *IOCounters) IOCounters {
 		Dropout     : s.Dropout - f.Dropin,
 	}
 }
-
-  
-  
-
-
-      
-     
-     
     

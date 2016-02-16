@@ -52,6 +52,8 @@ func OpenProcess(pid uint32) (*Process, error) {
 	}, nil
 }
 
+//---------------------------------------------------------------------------------------
+
 func (p Process) ioCounters() (*IOCounters, error){
 	wioc, err := win32.GetProcessIoCounters(syscall.Handle(p.handle)) 
 	if err != nil {
@@ -65,6 +67,8 @@ func (p Process) ioCounters() (*IOCounters, error){
 		WriteBytes : sysmon.Size(wioc.WriteTransferCount),
 	}, nil
 }
+
+//---------------------------------------------------------------------------------------
 
 func (p Process) usage() (*TimeUsage, error) {
 	var u syscall.Rusage
@@ -81,6 +85,8 @@ func (p Process) usage() (*TimeUsage, error) {
 		UserTime     : toDuration(u.UserTime),
 	}, nil
 }
+
+//---------------------------------------------------------------------------------------
 
 type MemoryCounters struct {
 	PageFaultCount             uint32      // The number of page faults.
@@ -132,6 +138,8 @@ func (p Process) memoryInfo() (*MemoryCounters, error) {
 	}, nil
 }
 
+//---------------------------------------------------------------------------------------
+
 type Module struct {
 	ProcessID uint32
 	BaseAddr  uintptr      // The base address of the module in the context of the owning process.
@@ -141,10 +149,25 @@ type Module struct {
 	ExePath   string
 }
 
+func (m Module) GoString() string {
+	s := []string{"Module{", 
+			fmt.Sprintf("  ProcessID : %v", m.ProcessID),   
+			fmt.Sprintf("  BaseAddr  : %x", m.BaseAddr),   
+			fmt.Sprintf("  BaseSize  : %s", m.BaseSize),   
+			fmt.Sprintf("  Handle    : %v", m.Handle),   
+			fmt.Sprintf("  Name      : %s", m.Name),   
+			fmt.Sprintf("  ExePath   : %s", m.ExePath),   
+			"}",
+	}
+	return strings.Join(s, "\n")	
+}
+
 func (p Process) modules() ([]*Module, error) {
+	var ret []*Module
+
 	snapshot, err := win32.CreateToolhelp32Snapshot(win32.TH32CS_SNAPMODULE, p.Pid)
 	if err != nil {
-		return nil, err
+		return ret, err
 	}
 	defer syscall.CloseHandle(snapshot)
 
@@ -152,21 +175,88 @@ func (p Process) modules() ([]*Module, error) {
 	modEntry.Size = uint32(unsafe.Sizeof(modEntry))
 
 	if err := win32.Module32First(snapshot, &modEntry); err != nil {
-		return nil, err 
+		return ret, err 
 	}
 
 	for {
-	//	fmt.Println("ModuleID:     ", modEntry.ModuleID)
-	//	fmt.Println("ModuleName:   ", syscall.UTF16ToString(modEntry.ModuleName[:]))
-		fmt.Println("ExePath:      ", syscall.UTF16ToString(modEntry.ExePath[:]))
+		m := &Module{
+			ProcessID : modEntry.ProcessID,
+			BaseAddr  : modEntry.BaseAddr,
+			BaseSize  : sysmon.Size(modEntry.BaseSize),
+			Handle    : modEntry.Handle,
+			Name      : syscall.UTF16ToString(modEntry.ModuleName[:]),
+			ExePath   : syscall.UTF16ToString(modEntry.ExePath[:]),
+		}
+		ret = append(ret, m)
 
 		err = win32.Module32Next(snapshot, &modEntry)
 		if err != nil {
-			return nil, err
+			if err == syscall.ERROR_NO_MORE_FILES {
+				break
+			}
+			return ret, err
 		}
 	}
-	return nil, nil
+	return ret[1:], nil
 }
+
+//---------------------------------------------------------------------------------------
+
+type Thread struct {
+	ThreadID        uint32
+	OwnerProcessID  uint32
+	BasePriority    int32  // The kernel base priority level assigned to the thread. 
+	                       // The priority is a number from 0 to 31, with 0 representing 
+	                       // the lowest possible thread priority.
+}
+
+func (t Thread) GoString() string {
+	s := []string{"Thread{", 
+			fmt.Sprintf("  ThreadID       : %v", t.ThreadID),   
+			fmt.Sprintf("  OwnerProcessID : %v", t.OwnerProcessID),   
+			fmt.Sprintf("  BasePriority   : %v", t.BasePriority),   
+			"}",
+	}
+	return strings.Join(s, "\n")	
+}
+
+func (p Process) threads() ([]*Thread, error) {
+	var ret []*Thread
+
+	snapshot, err := win32.CreateToolhelp32Snapshot(win32.TH32CS_SNAPTHREAD, p.Pid)
+	if err != nil {
+		return ret, err
+	}
+	defer syscall.CloseHandle(snapshot)
+
+	var thEntry win32.ThreadEntry32
+	thEntry.Size = uint32(unsafe.Sizeof(thEntry))
+
+	if err = win32.Thread32First(snapshot, &thEntry); err != nil {
+		return ret, err
+	}
+
+	for {
+		t := &Thread{
+			ThreadID       : thEntry.ThreadID,
+			OwnerProcessID : thEntry.OwnerProcessID,
+			BasePriority   : thEntry.BasePriority,
+		}
+		ret = append(ret, t)
+
+		err = win32.Thread32Next(snapshot, &thEntry)
+		if err != nil {
+			if err == syscall.ERROR_NO_MORE_FILES {
+				break
+			}
+			return ret, err
+		}
+	}
+
+	return ret, nil
+}
+
+//---------------------------------------------------------------------------------------
 
 func toDuration(ft syscall.Filetime) time.Duration {
 	n := int64(ft.HighDateTime) << 32 + int64(ft.LowDateTime) // in 100-nanosecond intervals

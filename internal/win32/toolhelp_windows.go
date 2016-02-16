@@ -5,6 +5,8 @@
 package win32
 
 import (
+	"log"
+
 	"syscall"
 	"unsafe"
 )
@@ -29,6 +31,8 @@ var (
 	procGetProcessIoCounters        = modkernel32.NewProc("GetProcessIoCounters")
 	procGetProcessMemoryInfo        = modkernel32.NewProc("K32GetProcessMemoryInfo")
 
+	// Time functions
+	procGetTickCount64              = modkernel32.NewProc("GetTickCount64")
 )
 
 const (
@@ -55,7 +59,7 @@ type ModuleEntry32 struct {
 	ProccntUsage uint32  // The load count of the module, which is not generally meaningful, and usually equal to 0xFFFF.
 	BaseAddr     uintptr // The base address of the module in the context of the owning process.
 	BaseSize     uint32  // The size of the module, in bytes.
-	Module       uintptr // A handle to the module in the context of the owning process.
+	Handle       uintptr // A handle to the module in the context of the owning process.
 	ModuleName   [MAX_MODULE_NAME32 + 1]uint16
 	ExePath      [MAX_PATH]uint16
 }
@@ -276,4 +280,14 @@ func GetProcessMemoryInfo(h syscall.Handle) (*ProcessMemoryCountersEx, error) {
 	}
 
 	return &pmc, nil
+}
+
+func GetTickCount64() uint64 {
+	r, _, _ := procGetTickCount64.Call()
+
+	if r == 0 {
+		log.Fatal(syscall.GetLastError())
+	}
+
+	return uint64(r)
 }

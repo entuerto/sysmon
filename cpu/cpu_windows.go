@@ -42,7 +42,7 @@ var (
 	procGetSystemTimes = modkernel32.NewProc("GetSystemTimes")
 )
 
-func GetInfo() ([]Info, error) {
+func getInfo() ([]Info, error) {
 	var ret []Info
 	var dst []Win32_Processor
 
@@ -80,7 +80,7 @@ func GetInfo() ([]Info, error) {
 // Retrieves system CPU timing information.
 // On a multiprocessor system, the values returned are the sum of the designated 
 // times across all processors.
-func SystemTimes() (*Times, error) {
+func systemTimes() (*Times, error) {
 	var (
 		IdleTime syscall.Filetime 
 		KernelTime syscall.Filetime
@@ -107,7 +107,7 @@ func SystemTimes() (*Times, error) {
 }
 
 // A float representing the current system-wide CPU utilization as a percentage.
-func UsagePercent() ([]float64, error) {
+func usagePercent() ([]float64, error) {
 	var ret []float64
 	var dst []Win32_Processor
 

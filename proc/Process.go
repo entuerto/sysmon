@@ -102,7 +102,8 @@ func (p Process) Modules() ([]*Module, error) {
 	return p.modules()
 }
 
-func (p Process) Threads() {
+func (p Process) Threads() ([]*Thread, error) {
+	return p.threads()
 }
 
 // runtime.SetFinalizer(p, (*Process).Release)
