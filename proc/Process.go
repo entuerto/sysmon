@@ -12,6 +12,8 @@ import (
 	"github.com/entuerto/sysmon"
 )
 
+// ProcessesByName()
+
 type Process struct {
 	Pid         uint32 `json:"pid"`
 	ParentId    uint32 `json:"ppid"`

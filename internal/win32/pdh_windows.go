@@ -7,6 +7,7 @@ package win32
 import (
 	"errors"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -33,11 +34,16 @@ var (
 
 	procPdhOpenQuery                = modpdh.NewProc("PdhOpenQuery")
 	procPdhAddCounter               = modpdh.NewProc("PdhAddCounterW")
+	procPdhAddEnglishCounter        = modpdh.NewProc("PdhAddEnglishCounterW")
 	procPdhCollectQueryData         = modpdh.NewProc("PdhCollectQueryData")
+	procPdhCollectQueryDataWithTime = modpdh.NewProc("PdhCollectQueryDataWithTime")
 	procPdhEnumObjects              = modpdh.NewProc("PdhEnumObjectsW")
 	procPdhEnumObjectItems          = modpdh.NewProc("PdhEnumObjectItemsW")
 	procPdhGetFormattedCounterValue = modpdh.NewProc("PdhGetFormattedCounterValue")
 	procPdhCloseQuery               = modpdh.NewProc("PdhCloseQuery")
+	procPdhLookupPerfNameByIndex    = modpdh.NewProc("PdhLookupPerfNameByIndexW")
+	procPdhLookupPerfIndexByName    = modpdh.NewProc("PdhLookupPerfIndexByNameW")
+	procPdhRemoveCounter            = modpdh.NewProc("PdhRemoveCounter")
 )
 
 type PdhFmtCounterValueDouble struct {
@@ -89,6 +95,24 @@ func PdhAddCounter(queryHdl syscall.Handle, CounterPath string) (syscall.Handle,
 	var counterHdl syscall.Handle
 
 	r, _, err := procPdhAddCounter.Call(
+					uintptr(queryHdl),
+					uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(CounterPath))),
+					0,
+					uintptr(unsafe.Pointer(&counterHdl)))
+
+	if r != 0 {
+		return 0, err
+	}
+
+	return counterHdl, nil
+}
+
+// Adds the specified language-neutral counter to the query.
+// See for more information: https://msdn.microsoft.com/en-us/library/windows/desktop/aa372536(v=vs.85).aspx
+func PdhAddEnglishCounter(queryHdl syscall.Handle, CounterPath string) (syscall.Handle, error) {
+	var counterHdl syscall.Handle
+
+	r, _, err := procPdhAddEnglishCounter.Call(
 					uintptr(queryHdl),
 					uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(CounterPath))),
 					0,
@@ -163,6 +187,30 @@ func PdhCollectQueryData(queryHdl syscall.Handle) error {
 	}
 
 	return nil
+}
+
+// Collects the current raw data value for all counters in the specified query and 
+// updates the status code of each counter.  
+//
+// Time stamp when the first counter value in the query was retrieved. The time is specified as FILETIME.
+func PdhCollectQueryDataWithTime(queryHdl syscall.Handle) (*time.Time, error) {
+	var TimeStamp syscall.Filetime
+
+	r, _, err := procPdhCollectQueryDataWithTime.Call(
+		uintptr(queryHdl),
+		uintptr(unsafe.Pointer(&TimeStamp)))
+
+	if r != 0 && err != nil {
+		if r == uintptr(PDH_NO_DATA) {
+			// Has not values
+			return nil, errors.New(codeText[PDH_NO_DATA])
+		}
+		return nil, err
+	}
+
+	ts := time.Unix(0, TimeStamp.Nanoseconds())
+
+	return &ts, nil
 }
 
 // Returns a list of objects available on the specified computer or in the specified 
@@ -305,4 +353,66 @@ func PdhEnumObjectItems(DataSource, MachineName, ObjectName string) (*PdhObjectI
 		Counters   : counters,
 		Instances  : instances,
 	}, nil
+}
+
+// Returns the performance object name or counter name corresponding to the specified index. 
+func PdhLookupPerfNameByIndex(MachineName string, idx uint32) (string, error) {
+	var (
+		machine         uintptr
+		NameBuffer      [4096]uint16
+		NameBufferSize  = uint32(4096)
+	)
+
+	if len(MachineName) != 0 {
+		m, _ := syscall.UTF16PtrFromString(MachineName)
+		machine = uintptr(unsafe.Pointer(m))
+	}
+
+	r, _, _ := procPdhLookupPerfNameByIndex.Call(
+		machine, // local machine
+		uintptr(idx),
+		uintptr(unsafe.Pointer(&NameBuffer[0])),
+		uintptr(unsafe.Pointer(&NameBufferSize)))
+
+	if r != 0 {
+		return "", errors.New(codeText[r])
+	}
+
+	return syscall.UTF16ToString(NameBuffer[:]), nil
+}
+
+func PdhLookupPerfIndexByName(MachineName, CounterName string) (uint32, error) {
+	var (
+		machine uintptr
+		idx uint32
+	)
+
+	if len(MachineName) != 0 {
+		m, _ := syscall.UTF16PtrFromString(MachineName)
+		machine = uintptr(unsafe.Pointer(m))
+	}
+
+	NameBuffer, _ := syscall.UTF16PtrFromString(CounterName) 
+
+	r, _, _ := procPdhLookupPerfIndexByName.Call(
+		machine, // local machine
+		uintptr(unsafe.Pointer(NameBuffer)),
+		uintptr(unsafe.Pointer(&idx)))
+
+	if r != 0 {
+		return 0, errors.New(codeText[r])
+	}
+
+	return idx, nil
+}
+
+// Removes a counter from a query.
+func PdhRemoveCounter(counterHdl syscall.Handle) error {
+	r, 	_, _ := procPdhRemoveCounter.Call(uintptr(counterHdl))
+
+	if r != 0 {
+		return errors.New(codeText[r])
+	}
+
+	return nil
 }
