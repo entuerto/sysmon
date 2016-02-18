@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net"
 	"testing"
-	"time"
+//	"time"
 )
 
 func TestInterfaces(t *testing.T) {
@@ -64,7 +64,7 @@ func TestInterfaceAddrs(t *testing.T) {
 }
 
 func TestQueryConnections(t *testing.T) {
-	conns, err := QueryConnections() 
+	conns, err := QueryConnectionsAll() 
 
 	if err != nil {
 		t.Errorf("error %v", err)
@@ -73,12 +73,14 @@ func TestQueryConnections(t *testing.T) {
 	for _, c := range conns {
 		fmt.Println("Connection{")
 		fmt.Printf("  State  : %+v\n", c.State)
+		fmt.Printf("  Type   : %+v\n", c.Type)
 		fmt.Printf("  Local  : %+v\n", c.Local)
 		fmt.Printf("  Remote : %+v\n", c.Remote)
+		fmt.Printf("  Pid    : %+v\n", c.Pid)
 		fmt.Println("}")
 	}
 }
-
+/*
 func TestQueryIOCounters(t *testing.T) {
 	ifaces, err := net.Interfaces()
 
@@ -118,4 +120,4 @@ func delta(f, s *IOCounters) IOCounters {
 		Dropout     : s.Dropout - f.Dropin,
 	}
 }
-    
+    */
