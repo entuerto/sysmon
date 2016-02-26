@@ -103,6 +103,7 @@ func TestQueryIOCounters(t *testing.T) {
 		for {
 			ioc := <- qio.IOCounterChan
 			fmt.Printf("%#v\n", delta(pioc, ioc))	
+			pioc = ioc
 		}
 	}()
 

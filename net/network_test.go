@@ -80,7 +80,7 @@ func TestQueryConnections(t *testing.T) {
 		fmt.Println("}")
 	}
 }
-/*
+
 func TestQueryIOCounters(t *testing.T) {
 	ifaces, err := net.Interfaces()
 
@@ -100,6 +100,7 @@ func TestQueryIOCounters(t *testing.T) {
 		for {
 			ioc := <- qio.IOCounterChan
 			fmt.Printf("%#v\n", delta(pioc, ioc))	
+			pioc = ioc
 		}
 	}()
 
@@ -120,4 +121,3 @@ func delta(f, s *IOCounters) IOCounters {
 		Dropout     : s.Dropout - f.Dropin,
 	}
 }
-    */
