@@ -12,12 +12,12 @@ import (
 )
 
 type Swap struct {
-	Total   sysmon.Size `json:"total"` // total swap memory in bytes
-	Used    sysmon.Size `json:"used"` // used swap memory in bytes
-	Free    sysmon.Size `json:"free"` // free swap memory in bytes
+	Total   sysmon.Size `json:"total"`   // total swap memory in bytes
+	Used    sysmon.Size `json:"used"`    // used swap memory in bytes
+	Free    sysmon.Size `json:"free"`    // free swap memory in bytes
 	Percent float64     `json:"percent"` // the percentage usage calculated as (total - available) / total * 100
-	SIn     sysmon.Size `json:"sin"` // the number of bytes the system has swapped in from disk (cumulative)
-	SOut    sysmon.Size `json:"sout"` // the number of bytes the system has swapped out from disk (cumulative)
+	SIn     sysmon.Size `json:"sin"`     // the number of bytes the system has swapped in from disk (cumulative)
+	SOut    sysmon.Size `json:"sout"`    // the number of bytes the system has swapped out from disk (cumulative)
 }
 
 func (sw Swap) GoString() string {

@@ -12,8 +12,6 @@ import (
 )
 
 var (
-	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
-
 	procCreateToolhelp32Snapshot    = modkernel32.NewProc("CreateToolhelp32Snapshot")
 	procHeap32First                 = modkernel32.NewProc("Heap32FirstW") 
 	procHeap32ListFirst             = modkernel32.NewProc("Heap32ListFirstW")
@@ -29,7 +27,6 @@ var (
 
 	procGetProcessHandleCount       = modkernel32.NewProc("GetProcessHandleCount")
 	procGetProcessIoCounters        = modkernel32.NewProc("GetProcessIoCounters")
-	procGetProcessMemoryInfo        = modkernel32.NewProc("K32GetProcessMemoryInfo")
 
 	// Time functions
 	procGetTickCount64              = modkernel32.NewProc("GetTickCount64")
@@ -249,37 +246,6 @@ func GetProcessIoCounters(h syscall.Handle) (*IOCounters, error) {
 	}
 
 	return &ioc, nil
-}
-
-type ProcessMemoryCountersEx struct {
-	cb                         uint32 // The size of the structure, in bytes.
-	PageFaultCount             uint32 // The number of page faults.
-	PeakWorkingSetSize         uint64 // The peak working set size, in bytes.
-	WorkingSetSize             uint64 // The current working set size, in bytes.
-	QuotaPeakPagedPoolUsage    uint64 // The peak paged pool usage, in bytes.
-	QuotaPagedPoolUsage        uint64 // The current paged pool usage, in bytes.
-	QuotaPeakNonPagedPoolUsage uint64 // The peak nonpaged pool usage, in bytes.
-	QuotaNonPagedPoolUsage     uint64 // The current nonpaged pool usage, in bytes.
-	PagefileUsage              uint64 // The Commit Charge value in bytes for this process. Commit Charge 
-	                                  // is the total amount of memory that the memory manager has committed 
-	                                  // for a running process.
-	PeakPagefileUsage          uint64 // The peak value in bytes of the Commit Charge during the lifetime 
-	                                  // of this process.
-	PrivateUsage               uint64
-}
-
-func GetProcessMemoryInfo(h syscall.Handle) (*ProcessMemoryCountersEx, error) {
-	var pmc ProcessMemoryCountersEx
-
-	r, _, _ := procGetProcessMemoryInfo.Call(uintptr(h), 
-	                                         uintptr(unsafe.Pointer(&pmc)),
-	                                         uintptr(unsafe.Sizeof(pmc)))
-
-	if r == 0 {
-		return nil, syscall.GetLastError()
-	}
-
-	return &pmc, nil
 }
 
 func GetTickCount64() uint64 {

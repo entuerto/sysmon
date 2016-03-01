@@ -7,9 +7,6 @@ package proc
 import (
 	"fmt"
 	"strings"
-	"time"
-
-	"github.com/entuerto/sysmon"
 )
 
 // ProcessesByName()
@@ -22,8 +19,6 @@ type Process struct {
 	CmdLine     string `json:"cmdLine"`
 	HandleCount uint32 `json:"handleCount"`
 	ThreadCount uint32 `json:"threadCount"`
-//	Environ
-//	CreateTime
 	Status      string
 	UserName    string
 
@@ -45,44 +40,6 @@ func (p Process) GoString() string {
 	}
 	return strings.Join(s, "\n")	
 }
-
-type TimeUsage struct {
-	CreationTime time.Time     `json:"creationTime"`
-	ExitTime     time.Time     `json:"exitTime"`
-	KernelTime   time.Duration `json:"kernelTime"`
-	UserTime     time.Duration `json:"userTime"`
-}
-
-func (tu TimeUsage) GoString() string {
-	s := []string{"TimeUsage{", 
-			fmt.Sprintf("  CreationTime : %s", tu.CreationTime), 
-			fmt.Sprintf("  ExitTime     : %s", tu.ExitTime), 
-			fmt.Sprintf("  KernelTime   : %s", tu.KernelTime), 
-			fmt.Sprintf("  UserTime     : %s", tu.UserTime),  
-			"}",
-	}
-	return strings.Join(s, "\n")	
-}
-
-
-type IOCounters struct  {
-	ReadCount  uint64      `json:"readCount"`
-	WriteCount uint64      `json:"writeCount"`
-	ReadBytes  sysmon.Size `json:"readBytes"`
-	WriteBytes sysmon.Size `json:"writeBytes"`
-}
-
-func (ioc IOCounters) GoString() string {
-	s := []string{"IOCounters{", 
-			fmt.Sprintf("  ReadCount  : %d", ioc.ReadCount), 
-			fmt.Sprintf("  WriteCount : %d", ioc.WriteCount), 
-			fmt.Sprintf("  ReadBytes  : %s", ioc.ReadBytes), 
-			fmt.Sprintf("  WriteBytes : %s", ioc.WriteBytes), 
-			"}",
-	}
-	return strings.Join(s, "\n")	
-}
-
 
 func (p Process) Parent() (*Process, error) {
 	return OpenProcess(p.ParentId)

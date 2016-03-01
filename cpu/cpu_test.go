@@ -99,12 +99,6 @@ func ExampleCpuSysTimes() {
 	fmt.Println("User:      ", t.User)
 	fmt.Println("System:    ", t.System)
 	fmt.Println("Idle:      ", t.Idle)
-	fmt.Println("Nice:      ", t.Nice)
-	fmt.Println("Iowait:    ", t.Iowait)
-	fmt.Println("Irq:       ", t.Irq)
-	fmt.Println("Softirq:   ", t.Softirq)
-	fmt.Println("Steal:     ", t.Steal)
-	fmt.Println("Guest:     ", t.Guest)
-	fmt.Println("GuestNice: ", t.GuestNice)
+	fmt.Println("Kernel:    ", t.Kernel)
 	// Output: _
 }

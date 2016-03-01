@@ -54,6 +54,28 @@ func OpenProcess(pid uint32) (*Process, error) {
 
 //---------------------------------------------------------------------------------------
 
+type IOCounters struct  {
+	ReadCount  uint64      `json:"readCount"`
+	WriteCount uint64      `json:"writeCount"`
+	OtherCount uint64      `json:"otherCount"`
+	ReadBytes  sysmon.Size `json:"readBytes"`
+	WriteBytes sysmon.Size `json:"writeBytes"`
+	OtherBytes sysmon.Size `json:"otherBytes"`
+}
+
+func (ioc IOCounters) GoString() string {
+	s := []string{"IOCounters{", 
+			fmt.Sprintf("  ReadCount  : %d", ioc.ReadCount), 
+			fmt.Sprintf("  WriteCount : %d", ioc.WriteCount), 
+			fmt.Sprintf("  OtherCount : %d", ioc.OtherCount), 
+			fmt.Sprintf("  ReadBytes  : %s", ioc.ReadBytes), 
+			fmt.Sprintf("  WriteBytes : %s", ioc.WriteBytes), 
+			fmt.Sprintf("  OtherBytes : %s", ioc.OtherBytes), 
+			"}",
+	}
+	return strings.Join(s, "\n")	
+}
+
 func (p Process) ioCounters() (*IOCounters, error){
 	wioc, err := win32.GetProcessIoCounters(syscall.Handle(p.handle)) 
 	if err != nil {
@@ -63,12 +85,32 @@ func (p Process) ioCounters() (*IOCounters, error){
 	return &IOCounters{
 		ReadCount  : wioc.ReadOperationCount,
 		WriteCount : wioc.WriteOperationCount,
+		OtherCount : wioc.OtherOperationCount,
 		ReadBytes  : sysmon.Size(wioc.ReadTransferCount),
 		WriteBytes : sysmon.Size(wioc.WriteTransferCount),
+		OtherBytes : sysmon.Size(wioc.OtherTransferCount),
 	}, nil
 }
 
 //---------------------------------------------------------------------------------------
+
+type TimeUsage struct {
+	CreationTime time.Time     `json:"creationTime"`
+	ExitTime     time.Time     `json:"exitTime"`
+	KernelTime   time.Duration `json:"kernelTime"`
+	UserTime     time.Duration `json:"userTime"`
+}
+
+func (tu TimeUsage) GoString() string {
+	s := []string{"TimeUsage{", 
+			fmt.Sprintf("  CreationTime : %s", tu.CreationTime), 
+			fmt.Sprintf("  ExitTime     : %s", tu.ExitTime), 
+			fmt.Sprintf("  KernelTime   : %s", tu.KernelTime), 
+			fmt.Sprintf("  UserTime     : %s", tu.UserTime),  
+			"}",
+	}
+	return strings.Join(s, "\n")	
+}
 
 func (p Process) usage() (*TimeUsage, error) {
 	var u syscall.Rusage

@@ -173,7 +173,7 @@ type IOCounters struct {
 	WriteBytes   sysmon.Size `json:"writeBytes"`  // number of bytes written
 	ReadTime     uint64      `json:"readTime"`    // time spent reading from disk 
 	WriteTime    uint64      `json:"writeTime"`   // time spent writing to disk 
-	IoTime       uint64      `json:"ioTime"`
+	IoTime       time.Time   `json:"ioTime"`      // Query Time
 }
 
 func (ioc IOCounters) GoString() string {
@@ -185,7 +185,7 @@ func (ioc IOCounters) GoString() string {
 			fmt.Sprintf("  WriteBytes : %s", ioc.WriteBytes), 
 			fmt.Sprintf("  ReadTime   : %s", toDuration(ioc.ReadTime)), 
 			fmt.Sprintf("  WriteTime  : %s", toDuration(ioc.WriteTime)), 
-			fmt.Sprintf("  IoTime     : %d", ioc.IoTime), 
+			fmt.Sprintf("  IoTime     : %s", ioc.IoTime), 
 			"}",
 	}
 	return strings.Join(s, "\n")	

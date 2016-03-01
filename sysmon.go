@@ -27,24 +27,24 @@ func (b Size) String() string {
 	switch {
 /*		
 	case b >= YB:
-	    return fmt.Sprintf("%.2fYB", float64(b) / float64(YB))
+	    return fmt.Sprintf("%.2f YB", float64(b) / float64(YB))
 	case b >= ZB:
-	    return fmt.Sprintf("%.2fZB", float64(b) / float64(ZB))
+	    return fmt.Sprintf("%.2f ZB", float64(b) / float64(ZB))
 */	    
 	case b >= EB:
-	    return fmt.Sprintf("%.2fEB", float64(b) / float64(EB))
+	    return fmt.Sprintf("%.2f EB", float64(b) / float64(EB))
 	case b >= PB:
-	    return fmt.Sprintf("%.2fPB", float64(b) / float64(PB))
+	    return fmt.Sprintf("%.2f PB", float64(b) / float64(PB))
 	case b >= TB:
-	    return fmt.Sprintf("%.2fTB", float64(b) / float64(TB))
+	    return fmt.Sprintf("%.2f TB", float64(b) / float64(TB))
 	case b >= GB:
-	    return fmt.Sprintf("%.2fGB", float64(b) / float64(GB))
+	    return fmt.Sprintf("%.2f GB", float64(b) / float64(GB))
 	case b >= MB:
-	    return fmt.Sprintf("%.2fMB", float64(b) / float64(MB))
+	    return fmt.Sprintf("%.2f MB", float64(b) / float64(MB))
 	case b >= KB:
-	    return fmt.Sprintf("%.2fKB", float64(b) / float64(KB))
+	    return fmt.Sprintf("%.2f KB", float64(b) / float64(KB))
 	}
-	return fmt.Sprintf("%.2dB", b)
+	return fmt.Sprintf("%.2d B", b)
 }
 
 func UpTime() time.Duration {

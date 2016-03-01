@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-const PID = 7820
+const PID = 10336
 
 func TestFindProcess(t *testing.T) {
 	p, err := OpenProcess(PID)

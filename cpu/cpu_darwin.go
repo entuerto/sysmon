@@ -29,6 +29,19 @@ import (
 	"unsafe"
 )
 
+type Times struct {
+	User      time.Duration `json:"user"`
+	System    time.Duration `json:"system"`
+	Idle      time.Duration `json:"idle"`
+	Nice      time.Duration `json:"nice"`
+	Iowait    time.Duration `json:"iowait"`
+	Irq       time.Duration `json:"irq"`
+	Softirq   time.Duration `json:"softirq"`
+	Steal     time.Duration `json:"steal"`
+	Guest     time.Duration `json:"guest"`
+	GuestNice time.Duration `json:"guestNice"`
+}
+
 const (
 	CLK_TCK = 100  // ticks per second
 )

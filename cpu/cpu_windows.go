@@ -8,43 +8,21 @@ import (
 	"fmt"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/StackExchange/wmi"
+	"github.com/entuerto/sysmon/internal/win32"
 )
 
-type Family uint16
-
-func (f Family) String() string {
-	switch (f) {
-	case 1:
-		return "Other"
-	case 2:
-		return "Unknown"
-	case 198:
-		return "Intel Core™ i7-2760QM"
-	default:
-		return fmt.Sprintf("%d", f)
-	}
+type Times struct {
+	User      time.Duration `json:"user"`
+	System    time.Duration `json:"system"`
+	Idle      time.Duration `json:"idle"`
+	Kernel    time.Duration `json:"kernel"`
 }
-
-type Win32_Processor struct {
-	Family                    Family
-	Manufacturer              string
-	Name                      string
-	NumberOfLogicalProcessors uint32
-	ProcessorId               *string
-	MaxClockSpeed             uint32
-}
-
-var (
-	modkernel32    = syscall.NewLazyDLL("kernel32.dll")
-	procGetSystemTimes = modkernel32.NewProc("GetSystemTimes")
-)
 
 func getInfo() ([]Info, error) {
 	var ret []Info
-	var dst []Win32_Processor
+	var dst []win32.Win32_Processor
 
 	q := wmi.CreateQuery(&dst, "")
 
@@ -82,34 +60,30 @@ func getInfo() ([]Info, error) {
 // times across all processors.
 func systemTimes() (*Times, error) {
 	var (
-		IdleTime syscall.Filetime 
+		IdleTime   syscall.Filetime 
 		KernelTime syscall.Filetime
-		UserTime syscall.Filetime
+		UserTime   syscall.Filetime
 	)
 
-	r, _, _ := procGetSystemTimes.Call(
-		uintptr(unsafe.Pointer(&IdleTime)),
-		uintptr(unsafe.Pointer(&KernelTime)),
-		uintptr(unsafe.Pointer(&UserTime)))
-
-	if r == 0 {
-		return nil, syscall.GetLastError()
+	if err := win32.GetSystemTimes(&IdleTime, &KernelTime, &UserTime); err != nil {
+		return nil, err
 	}
 
-	idle   := FileTimeToDuration(IdleTime)
-	kernel := FileTimeToDuration(KernelTime)
+	idle   := fileTimeToDuration(IdleTime)
+	kernel := fileTimeToDuration(KernelTime)
 
 	return &Times{
-		Idle:   idle,
-		User:   FileTimeToDuration(UserTime),
-		System: kernel - idle,
+		Idle   : idle,
+		User   : fileTimeToDuration(UserTime),
+		System : kernel - idle,
+		Kernel : kernel,
 	}, nil
 }
 
 // A float representing the current system-wide CPU utilization as a percentage.
 func usagePercent() ([]float64, error) {
 	var ret []float64
-	var dst []Win32_Processor
+	var dst []win32.Win32_Processor
 
 	q := wmi.CreateQuery(&dst, "")
 
@@ -128,7 +102,7 @@ func usagePercent() ([]float64, error) {
 	return ret, nil
 }
 
-func FileTimeToDuration(ft syscall.Filetime) time.Duration {
+func fileTimeToDuration(ft syscall.Filetime) time.Duration {
 	n := int64(ft.HighDateTime) << 32 + int64(ft.LowDateTime) // in 100-nanosecond intervals
 	return time.Duration(n * 100) * time.Nanosecond
 }

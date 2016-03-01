@@ -7,13 +7,12 @@ package disk
 import (
 	"fmt"
 	"log"
-	"strings"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/StackExchange/wmi"
 	"github.com/entuerto/sysmon"
+	"github.com/entuerto/sysmon/internal/win32"
 )
 
 type Access uint16
@@ -37,25 +36,9 @@ func (a Access) String() string {
 
 //---------------------------------------------------------------------------------------
 
-type Win32_DiskPartition struct {
-	BlockSize         uint64
-	BootPartition     bool
-	PrimaryPartition  bool
-	Caption           string
-	CreationClassName string
-	Description       string
-	DeviceID          string
-	DiskIndex         uint32
-	Name              string
-	NumberOfBlocks    uint64
-	Size              sysmon.Size
-	StartingOffset    uint64
-	Type              string
-}
-
 func allPartitions() ([]Partition, error) {
 	var ret []Partition
-	var dst []Win32_DiskPartition
+	var dst []win32.Win32_DiskPartition
 
 	q := wmi.CreateQuery(&dst, "")
 
@@ -76,7 +59,7 @@ func allPartitions() ([]Partition, error) {
 			BootPartition   : p.BootPartition,
 			NumberOfBlocks  : p.NumberOfBlocks,
 			PrimaryPartition: p.PrimaryPartition,
-			Size            : p.Size,
+			Size            : sysmon.Size(p.Size),
 			Index           : p.DiskIndex,
 			Type            : p.Type,
 		}
@@ -89,27 +72,9 @@ func allPartitions() ([]Partition, error) {
 
 //---------------------------------------------------------------------------------------
 
-type Win32_Volume  struct {
-	Automount       bool
-	BlockSize       uint64
-	Capacity        sysmon.Size
-	Caption         string
-	Description     string
-	DeviceID        string
-	DriveLetter     string
-	DriveType       uint32
-	FileSystem      string
-	FreeSpace       sysmon.Size
-	Label           string
-	Name            string
-	NumberOfBlocks  uint64
-	SystemName      string
-	SerialNumber    uint32
-}
-
 func allVolumes() ([]Volume, error) {
 	var ret []Volume
-	var dst []Win32_Volume
+	var dst []win32.Win32_Volume
 
 	q := wmi.CreateQuery(&dst, "")
 
@@ -133,11 +98,11 @@ func allVolumes() ([]Volume, error) {
 				Description : v.Description,
 			},
 			BlockSize   : v.BlockSize,
-			Capacity    : v.Capacity,
+			Capacity    : sysmon.Size(v.Capacity),
 			Mount       : v.DriveLetter,
 			DriveType   : v.DriveType,
 			FileSystem  : v.FileSystem,
-			FreeSpace   : v.FreeSpace,
+			FreeSpace   : sysmon.Size(v.FreeSpace),
 			Label       : v.Label,
 			SerialNumber: v.SerialNumber,   
 		}
@@ -152,7 +117,7 @@ func allVolumes() ([]Volume, error) {
 
 func allUsage() ([]Usage, error) {
 	var ret []Usage
-	var dst []Win32_Volume
+	var dst []win32.Win32_Volume
 
 	q := wmi.CreateQuery(&dst, "")
 
@@ -175,9 +140,9 @@ func allUsage() ([]Usage, error) {
 				Caption     : v.Caption,
 				Description : v.Description,
 			},
-			Total       : v.Capacity,
-			Free        : v.FreeSpace,
-			Used        : v.Capacity - v.FreeSpace,
+			Total       : sysmon.Size(v.Capacity),
+			Free        : sysmon.Size(v.FreeSpace),
+			Used        : sysmon.Size(v.Capacity - v.FreeSpace),
 			UsedPercent : float64(v.Capacity - v.FreeSpace) / float64(v.Capacity) * 100,
 		}
 
@@ -189,24 +154,9 @@ func allUsage() ([]Usage, error) {
 
 //---------------------------------------------------------------------------------------
 
-type Win32_DiskDrive struct {
-	DeviceID       string 
-    Name           string
-    Caption        string 
-    Description    string 
-    BytesPerSector uint32
-    Partitions     uint32
-    Model          string
-    Size           sysmon.Size
-    Index          uint32
-    MediaType      string
-    SerialNumber   string
-    Status         string
-}
-
 func allDrives() ([]DiskDrive, error) {
 	var ret []DiskDrive
-	var dst []Win32_DiskDrive
+	var dst []win32.Win32_DiskDrive
 
 	q := wmi.CreateQuery(&dst, "")
 
@@ -232,7 +182,7 @@ func allDrives() ([]DiskDrive, error) {
 			BytesPerSector : d.BytesPerSector,
 			Partitions     : d.Partitions,
 			Model          : d.Model,
-			Size           : d.Size,
+			Size           : sysmon.Size(d.Size),
 			Index          : d.Index,
 			MediaType      : d.MediaType,
 			SerialNumber   : d.SerialNumber,
@@ -247,47 +197,10 @@ func allDrives() ([]DiskDrive, error) {
 
 //---------------------------------------------------------------------------------------
 
-type _DISK_PERFORMANCE struct {
-	BytesRead           sysmon.Size
-	BytesWritten        sysmon.Size
-	ReadTime            uint64
-	WriteTime           uint64
-	IdleTime            uint64
-	ReadCount           uint32
-	WriteCount          uint32
-	QueueDepth          uint32
-	SplitCount          uint32
-	QueryTime           uint64
-	StorageDeviceNumber uint32
-	StorageManagerName  [8]uint16
-}
-
-func (dp _DISK_PERFORMANCE) GoString() string {
-	s := []string{"_DISK_PERFORMANCE{", 
-			fmt.Sprintf("  BytesRead           : %s", dp.BytesRead), 
-			fmt.Sprintf("  BytesWritten        : %s", dp.BytesWritten), 
-			fmt.Sprintf("  ReadTime            : %s", toDuration(dp.ReadTime)), 
-			fmt.Sprintf("  WriteTime           : %s", toDuration(dp.WriteTime)), 
-			fmt.Sprintf("  IdleTime            : %s", toDuration(dp.IdleTime)), 
-			fmt.Sprintf("  ReadCount           : %d", dp.ReadCount), 
-			fmt.Sprintf("  QueueDepth          : %d", dp.QueueDepth), 
-			fmt.Sprintf("  SplitCount          : %d", dp.SplitCount), 
-			fmt.Sprintf("  QueryTime           : %s", toDuration(dp.QueryTime)), 
-			fmt.Sprintf("  StorageDeviceNumber : %d", dp.StorageDeviceNumber), 
-			fmt.Sprintf("  BytesRead           : %d", dp.BytesRead), 
-			fmt.Sprintf("  StorageManagerName  : %s", syscall.UTF16ToString(dp.StorageManagerName[:])), 
-			"}",
-	}
-	return strings.Join(s, "\n")	
-}
-
 func toDuration(v uint64) time.Duration {
+	//DISK_PERFORMANCE::ReadTime is the total time spend on reads in 100ns units.
 	return time.Duration(v * 100) * time.Nanosecond
 }
-
-//DISK_PERFORMANCE::ReadTime is the total time spend on reads in 100ns units.
-
-const _IOCTL_DISK_PERFORMANCE = 0x70020
 
 func queryIOCounters(name string, freq time.Duration, qio QueryIO) {
 	h, err := syscall.Open(name, syscall.O_RDONLY, 0)
@@ -295,22 +208,11 @@ func queryIOCounters(name string, freq time.Duration, qio QueryIO) {
 		log.Fatal(err)
 	}
 
-	var (
-		diskPerf _DISK_PERFORMANCE
-		bytesReturned uint32
-	)
-
 	for {
 		select {
 		case <- time.After(freq):
-			err := syscall.DeviceIoControl(h, 
-				_IOCTL_DISK_PERFORMANCE, 
-				nil, 
-				0, 
-			    (*byte)(unsafe.Pointer(&diskPerf)), 
-				uint32(unsafe.Sizeof(diskPerf)),
-			    &bytesReturned, nil)
-		
+			diskPerf, err := win32.IoctlDiskPerformance(h)
+
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -319,11 +221,11 @@ func queryIOCounters(name string, freq time.Duration, qio QueryIO) {
 				Name       :  name,
 				ReadCount  :  diskPerf.ReadCount,
 				WriteCount :  diskPerf.WriteCount,
-				ReadBytes  :  diskPerf.BytesRead,
-				WriteBytes :  diskPerf.BytesWritten,
+				ReadBytes  :  sysmon.Size(diskPerf.BytesRead),
+				WriteBytes :  sysmon.Size(diskPerf.BytesWritten),
 				ReadTime   :  diskPerf.ReadTime,
 				WriteTime  :  diskPerf.WriteTime,
-				IoTime     :  0,
+				IoTime     :  toTime(diskPerf.QueryTime),
 			}
 			qio.IOCounterChan <- ioc
 		case <- qio.quit:
@@ -332,4 +234,12 @@ func queryIOCounters(name string, freq time.Duration, qio QueryIO) {
 			return
 		}
 	}
+}
+
+func toTime(nsec int64) time.Time {
+	// change starting time to the Epoch (00:00:00 UTC, January 1, 1970)
+	nsec -= 116444736000000000
+	// convert into nanoseconds
+	nsec *= 100
+	return time.Unix(0, nsec)
 }
