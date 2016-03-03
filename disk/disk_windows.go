@@ -223,8 +223,8 @@ func queryIOCounters(name string, freq time.Duration, qio QueryIO) {
 				WriteCount :  diskPerf.WriteCount,
 				ReadBytes  :  sysmon.Size(diskPerf.BytesRead),
 				WriteBytes :  sysmon.Size(diskPerf.BytesWritten),
-				ReadTime   :  diskPerf.ReadTime,
-				WriteTime  :  diskPerf.WriteTime,
+				ReadTime   :  toDuration(diskPerf.ReadTime),
+				WriteTime  :  toDuration(diskPerf.WriteTime),
 				IoTime     :  toTime(diskPerf.QueryTime),
 			}
 			qio.IOCounterChan <- ioc

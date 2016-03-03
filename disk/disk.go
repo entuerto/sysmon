@@ -166,14 +166,14 @@ func AllUsage() ([]Usage, error) {
 //---------------------------------------------------------------------------------------
 
 type IOCounters struct {
-	Name         string      `json:"name"`
-	ReadCount    uint32      `json:"readCount"`   // number of reads
-	WriteCount   uint32      `json:"writeCount"`  // number of writes
-	ReadBytes    sysmon.Size `json:"readBytes"`   // number of bytes read
-	WriteBytes   sysmon.Size `json:"writeBytes"`  // number of bytes written
-	ReadTime     uint64      `json:"readTime"`    // time spent reading from disk 
-	WriteTime    uint64      `json:"writeTime"`   // time spent writing to disk 
-	IoTime       time.Time   `json:"ioTime"`      // Query Time
+	Name         string        `json:"name"`
+	ReadCount    uint32        `json:"readCount"`   // number of reads
+	WriteCount   uint32        `json:"writeCount"`  // number of writes
+	ReadBytes    sysmon.Size   `json:"readBytes"`   // number of bytes read
+	WriteBytes   sysmon.Size   `json:"writeBytes"`  // number of bytes written
+	ReadTime     time.Duration `json:"readTime"`    // time spent reading from disk 
+	WriteTime    time.Duration `json:"writeTime"`   // time spent writing to disk 
+	IoTime       time.Time     `json:"ioTime"`      // Query Time
 }
 
 func (ioc IOCounters) GoString() string {
@@ -183,8 +183,8 @@ func (ioc IOCounters) GoString() string {
 			fmt.Sprintf("  WriteCount : %d", ioc.WriteCount), 
 			fmt.Sprintf("  ReadBytes  : %s", ioc.ReadBytes), 
 			fmt.Sprintf("  WriteBytes : %s", ioc.WriteBytes), 
-			fmt.Sprintf("  ReadTime   : %s", toDuration(ioc.ReadTime)), 
-			fmt.Sprintf("  WriteTime  : %s", toDuration(ioc.WriteTime)), 
+			fmt.Sprintf("  ReadTime   : %s", ioc.ReadTime), 
+			fmt.Sprintf("  WriteTime  : %s", ioc.WriteTime), 
 			fmt.Sprintf("  IoTime     : %s", ioc.IoTime), 
 			"}",
 	}

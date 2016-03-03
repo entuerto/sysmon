@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net"
 	"testing"
-//	"time"
+	"time"
 )
 
 func TestInterfaces(t *testing.T) {

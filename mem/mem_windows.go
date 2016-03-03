@@ -44,22 +44,22 @@ func virtualMemory() (*Virtual, error) {
 }
 
 type PerfCounter struct {
-	CommitTotal       sysmon.Size // Committed Bytes - System: Page File first value (in MB)
-	CommitLimit       sysmon.Size // Commit Limit    - System: Page File second value (in MB)
-	CommitPeak        sysmon.Size // Commit Charge: Peak
+	CommitTotal       sysmon.Size `json:"commitTotal"` // Committed Bytes - System: Page File first value (in MB)
+	CommitLimit       sysmon.Size `json:"commitLimit"` // Commit Limit    - System: Page File second value (in MB)
+	CommitPeak        sysmon.Size `json:"commitPeak"`  // Commit Charge: Peak
 	                  
-	PhysicalTotal     sysmon.Size // Physical Memory - Total
-	PhysicalAvailable sysmon.Size // Physical Memory - Available KB
+	PhysicalTotal     sysmon.Size `json:"physicalTotal"`     // Physical Memory - Total
+	PhysicalAvailable sysmon.Size `json:"physicalAvailable"` // Physical Memory - Available KB
 
-	SystemCache       sysmon.Size // Cache Bytes + Sharable pages on the standby and modified lists
+	SystemCache       sysmon.Size `json:"systemCache"` // Cache Bytes + Sharable pages on the standby and modified lists
 	                  
-	KernelTotal       sysmon.Size // Kernel Memory: Total - Pool Paged Bytes + Pool Nonpaged Bytes
-	KernelPaged       sysmon.Size // Kernel Memory: Paged - Pool Paged Bytes
-	KernelNonpaged    sysmon.Size // Kernel Memory: Nonpaged - Pool Nonpaged Bytes
+	KernelTotal       sysmon.Size `json:"kernelTotal"`    // Kernel Memory: Total - Pool Paged Bytes + Pool Nonpaged Bytes
+	KernelPaged       sysmon.Size `json:"kernelPaged"`    // Kernel Memory: Paged - Pool Paged Bytes
+	KernelNonpaged    sysmon.Size `json:"kernelNonpaged"` // Kernel Memory: Nonpaged - Pool Nonpaged Bytes
 
-	HandleCount       uint32 // The current number of open handles.
-	ProcessCount      uint32 // The current number of processes.
-	ThreadCount       uint32 // The current number of threads.     
+	HandleCount       uint32 `json:"handleCount"`  // The current number of open handles.
+	ProcessCount      uint32 `json:"processCount"` // The current number of processes.
+	ThreadCount       uint32 `json:"threadCount"`  // The current number of threads.     
 
 }
 
